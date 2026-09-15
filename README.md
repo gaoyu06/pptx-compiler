@@ -16,12 +16,12 @@ The toolchain ships three commands:
 ## Install
 
 ```bash
-# zero-install run straight from the repo
-uvx --from git+https://github.com/gaoyu06/pptx-compiler svg-to-pptx <project>
+# install the CLI tools from PyPI
+pipx install pptx-compiler
+# or: pip install pptx-compiler
 
-# or install the CLI tools
-pipx install git+https://github.com/gaoyu06/pptx-compiler
-# or: pip install git+https://github.com/gaoyu06/pptx-compiler
+# zero-install run
+uvx --from pptx-compiler svg-to-pptx <project>
 ```
 
 ## Usage
