@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - DrawingML Hyperlink Lowering
+pptx-compiler - DrawingML Hyperlink Lowering
 
 Register native PowerPoint hyperlink relationships and attach click actions to
 text runs or clickable leaf shapes produced by the SVG converter.
@@ -13,7 +13,7 @@ Examples:
     linked = apply_shape_hyperlink(result, ctx, "#slide-2")
 
 Dependencies:
-    PPT Master hyperlink contract and DrawingML conversion context.
+    pptx-compiler hyperlink contract and DrawingML conversion context.
 """
 
 from __future__ import annotations

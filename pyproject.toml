@@ -3,12 +3,19 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "svg-to-pptx"
+name = "pptx-compiler"
 version = "0.1.0"
 description = "Compile SVG pages (with pptx: extensions) into editable, native PPTX decks"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+authors = [
+    { name = "gaoyu06" },
+]
+
+[project.urls]
+Homepage = "https://github.com/gaoyu06/pptx-compiler"
+Repository = "https://github.com/gaoyu06/pptx-compiler"
 dependencies = [
     "python-pptx>=0.6.21",
     "XlsxWriter>=3.0.0",

@@ -531,7 +531,7 @@ class ReportMixin:
     def export_report(self, output_file: str = 'svg_quality_report.txt'):
         """Export check report"""
         with open(output_file, 'w', encoding='utf-8') as f:
-            f.write("PPT Master SVG Quality Check Report\n")
+            f.write("pptx-compiler SVG Quality Check Report\n")
             f.write("=" * 80 + "\n\n")
 
             for result in self.results:

@@ -1,4 +1,4 @@
-"""Import PPT Master-owned slide transitions into animations.json rows.
+"""Import pptx-compiler-owned slide transitions into animations.json rows.
 
 The reverse contract accepts only source XML that passes the existing
 generated-transition read-back validator. Unknown third-party carriers remain

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Visualization Catalog Resolver
+pptx-compiler - Visualization Catalog Resolver
 
 Resolve chart and table references from their live family indexes.
 

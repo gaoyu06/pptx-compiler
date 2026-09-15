@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Legacy SVG Inherited Style Migration
+pptx-compiler - Legacy SVG Inherited Style Migration
 
 Diagnose or migrate older SVG authoring files to root/group defaults plus local
 overrides. New authoring code calls the tree-level implementation before its

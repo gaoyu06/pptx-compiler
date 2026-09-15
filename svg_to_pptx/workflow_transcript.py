@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Automatic Workflow Transcript
+pptx-compiler - Automatic Workflow Transcript
 
 Internal runtime helper that records a project-scoped Python tool's command
 envelope and material text outcomes in an existing project workflow log.

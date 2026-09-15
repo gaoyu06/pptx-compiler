@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Project Management Internals
+pptx-compiler - Project Management Internals
 
 Internal project lifecycle, planning-artifact, and page-context implementation.
 Use the stable ``scripts/project_manager.py`` entry point for CLI operations.

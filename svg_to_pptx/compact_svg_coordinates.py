@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Legacy SVG Coordinate Migration
+pptx-compiler - Legacy SVG Coordinate Migration
 
 Diagnose or migrate older model-facing page-space SVG coordinates without
 rounding normalized crop ratios or transform linear coefficients. New

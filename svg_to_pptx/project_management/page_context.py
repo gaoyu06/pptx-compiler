@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Page Context Projection
+pptx-compiler - Page Context Projection
 
 Build deterministic per-page execution views and optional token telemetry.
 

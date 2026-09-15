@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Project Specification Helpers
+pptx-compiler - Project Specification Helpers
 
 Scaffold and validate the Markdown planning artifacts used by project_manager.py.
 The module keeps schema parsing and deterministic scaffold rendering independent
@@ -27,60 +27,19 @@ from typing import Mapping
 from .paths import (
     SCAFFOLD_DIR,
     SCHEMA_DIR,
-    SCRIPTS_DIR,
     SKILL_DIR,
 )
 
-try:
-    from svg_to_pptx.project_utils import (
-        CANVAS_FORMATS,
-        get_project_info as get_project_info_common,
-        validate_communication_trace,
-    )
-except ImportError:
-    import sys
-
-    tools_dir = SCRIPTS_DIR
-    from svg_to_pptx.project_utils import (  # type: ignore
-        CANVAS_FORMATS,
-        get_project_info as get_project_info_common,
-        validate_communication_trace,
-    )
-
-try:
-    from svg_to_pptx.visualization_catalog import (
-        LEGACY_STRUCTURE_INTENT_KIND,
-        VISUALIZATION_SVG_KIND,
-        VisualizationCatalogError,
-        resolve_visualization_reference,
-    )
-except ImportError:
-    import sys
-
-    from svg_to_pptx.visualization_catalog import (  # type: ignore
-        LEGACY_STRUCTURE_INTENT_KIND,
-        VISUALIZATION_SVG_KIND,
-        VisualizationCatalogError,
-        resolve_visualization_reference,
-    )
-
-
-TOOLS_DIR = SCRIPTS_DIR
-
-_CUSTOM_REFERENCE_CATALOGS = (
-    ("mode", "mode", "mode_references", SKILL_DIR / "references" / "modes"),
-    (
-        "visual_style",
-        "visual_style",
-        "visual_style_references",
-        SKILL_DIR / "references" / "visual-styles",
-    ),
-    (
-        "colors",
-        "image_rendering",
-        "image_rendering_references",
-        SKILL_DIR / "references" / "image-renderings",
-    ),
+from svg_to_pptx.project_utils import (
+    CANVAS_FORMATS,
+    get_project_info as get_project_info_common,
+    validate_communication_trace,
+)
+from svg_to_pptx.visualization_catalog import (
+    LEGACY_STRUCTURE_INTENT_KIND,
+    VISUALIZATION_SVG_KIND,
+    VisualizationCatalogError,
+    resolve_visualization_reference,
 )
 
 _MARKDOWN_H2_RE = re.compile(r"^##[ \t]+(.+?)[ \t]*$", re.MULTILINE)
@@ -1054,44 +1013,6 @@ def _validate_spec_lock_relations(
         raw_fields = section["fields"]
         assert isinstance(raw_fields, dict)
         return {str(key): str(value) for key, value in raw_fields.items()}
-
-    for section_id, selector_field, references_field, catalog_dir in (
-        _CUSTOM_REFERENCE_CATALOGS
-    ):
-        section_fields = fields(section_id)
-        is_custom = (
-            _normalize_schema_value(section_fields.get(selector_field, "")) == "custom"
-        )
-        raw_references = _normalize_schema_value(
-            section_fields.get(references_field, "")
-        )
-        if not is_custom:
-            if raw_references:
-                errors.append(
-                    f"{markdown_name} schema: field '{references_field}' is valid "
-                    f"only when '{selector_field}' is custom"
-                )
-            continue
-        if not raw_references:
-            continue
-        references = [item.strip() for item in raw_references.split(",")]
-        duplicates = sorted(
-            reference
-            for reference in set(references)
-            if references.count(reference) > 1
-        )
-        if duplicates:
-            errors.append(
-                f"{markdown_name} schema: field '{references_field}' repeats "
-                f"catalog id(s) {', '.join(duplicates)}"
-            )
-        for reference in references:
-            catalog_file = catalog_dir / f"{reference}.md"
-            if reference == "custom" or not catalog_file.is_file():
-                errors.append(
-                    f"{markdown_name} schema: field '{references_field}' references "
-                    f"unknown catalog id '{reference}'"
-                )
 
     for key, value in fields("images").items():
         if key.strip().casefold() in _LEGACY_IMAGE_METADATA_KEYS:

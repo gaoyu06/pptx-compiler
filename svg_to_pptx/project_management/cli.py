@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""PPT Master project-management CLI implementation.
+"""pptx-compiler project-management CLI implementation.
 
 Usage:
-    python3 scripts/project_manager.py init <project_name> [--format <registered_format>]
+    python3 -m svg_to_pptx.project_management.cli init <project_name> [--format <registered_format>]
         [--dir <path>] [--quick-generate]
-    python3 scripts/project_manager.py import-sources <project_path> <source1> [<source2> ...] [--move | --copy]
-    python3 scripts/project_manager.py scaffold-spec <project_path>
-    python3 scripts/project_manager.py scaffold-lock <project_path>
-    python3 scripts/project_manager.py validate <project_path>
-    python3 scripts/project_manager.py info <project_path>
-    python3 scripts/project_manager.py page-context <project_path> P07 [--record-usage]
-    python3 scripts/project_manager.py page-context-report <project_path>
+    python3 -m svg_to_pptx.project_management.cli import-sources <project_path> <source1> [<source2> ...] [--move | --copy]
+    python3 -m svg_to_pptx.project_management.cli scaffold-spec <project_path>
+    python3 -m svg_to_pptx.project_management.cli scaffold-lock <project_path>
+    python3 -m svg_to_pptx.project_management.cli validate <project_path>
+    python3 -m svg_to_pptx.project_management.cli info <project_path>
+    python3 -m svg_to_pptx.project_management.cli page-context <project_path> P07 [--record-usage]
+    python3 -m svg_to_pptx.project_management.cli page-context-report <project_path>
 
 Examples:
-    python3 scripts/project_manager.py init demo
-    python3 scripts/project_manager.py init widescreen --format ppt169
-    python3 scripts/project_manager.py validate projects/demo
+    python3 -m svg_to_pptx.project_management.cli init demo
+    python3 -m svg_to_pptx.project_management.cli init widescreen --format ppt169
+    python3 -m svg_to_pptx.project_management.cli validate projects/demo
 
 Dependencies:
-    Standard library plus local PPT Master project and source-conversion modules.
+    Standard library plus local pptx-compiler project modules.
 """
 
 from __future__ import annotations
@@ -30,7 +30,6 @@ import os
 import stat
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 from datetime import datetime
@@ -43,47 +42,28 @@ from .page_context import (
     record_page_context_usage,
     render_page_context,
 )
-from .paths import (
-    PROJECTS_ROOT,
-    REPO_ROOT,
-    SCRIPTS_DIR,
-    SOURCE_TO_MD_DIR,
-)
+from .paths import projects_root
 from .project_specs import scaffold_project_artifact, validate_project_artifacts
 
-
-
-from svg_to_pptx.workflow_log import append_note  # noqa: E402
-
-try:
-    from svg_to_pptx.project_utils import (
-        CANVAS_FORMATS,
-        get_project_info as get_project_info_common,
-        normalize_canvas_format,
-        validate_project_structure,
-        validate_svg_viewbox,
-    )
-except ImportError:
-    tools_dir = SCRIPTS_DIR
-    from svg_to_pptx.project_utils import (  # type: ignore
-        CANVAS_FORMATS,
-        get_project_info as get_project_info_common,
-        normalize_canvas_format,
-        validate_project_structure,
-        validate_svg_viewbox,
-    )
-
-TOOLS_DIR = SCRIPTS_DIR
-SOURCE_TO_MD_TOOLS_DIR = SOURCE_TO_MD_DIR
-
-from _dispatcher import (  # noqa: E402
-    DOC_SUFFIXES,
-    EXCEL_SUFFIXES,
-    LEGACY_EXCEL_SUFFIXES,
-    PDF_SUFFIXES,
-    PRESENTATION_SUFFIXES,
-    build_conversion_command,
+from svg_to_pptx.project_utils import (
+    CANVAS_FORMATS,
+    get_project_info as get_project_info_common,
+    normalize_canvas_format,
+    validate_project_structure,
+    validate_svg_viewbox,
 )
+from svg_to_pptx.workflow_log import append_note
+
+# Source-document suffix classes. The source_to_md conversion toolchain that
+# consumed these was removed with the skill workflows; the constants remain so
+# import-sources can still classify, archive, and pass through file types that
+# need no external converter.
+PDF_SUFFIXES = {".pdf"}
+PRESENTATION_SUFFIXES = {".pptx", ".ppt", ".key", ".odp"}
+EXCEL_SUFFIXES = {".xlsx", ".xlsm", ".xlsb", ".ods"}
+LEGACY_EXCEL_SUFFIXES = {".xls"}
+DOC_SUFFIXES = {".docx", ".doc", ".rtf", ".odt"}
+CONVERTIBLE_SUFFIXES = PDF_SUFFIXES | PRESENTATION_SUFFIXES | EXCEL_SUFFIXES | DOC_SUFFIXES
 
 SOURCE_DIRNAME = "sources"
 TEXT_SOURCE_SUFFIXES = {".md", ".markdown", ".txt"}
@@ -106,10 +86,10 @@ def _is_project_tree(source_path: Path) -> bool:
     A sibling directory such as ``projects/<slug>_web_sources/`` (topic-research
     output) is scratch material, not another project's tree.
     """
-    projects_root = PROJECTS_ROOT.resolve()
+    root = projects_root().resolve()
     source_path = source_path.resolve()
     try:
-        relative = source_path.relative_to(projects_root)
+        relative = source_path.relative_to(root)
     except ValueError:
         return False
     if not relative.parts:
@@ -258,7 +238,7 @@ class ProjectManager:
     CANVAS_FORMATS = CANVAS_FORMATS
 
     def __init__(self, base_dir: str | Path | None = None) -> None:
-        self.base_dir = Path(base_dir) if base_dir is not None else PROJECTS_ROOT
+        self.base_dir = Path(base_dir) if base_dir is not None else projects_root()
 
     def scaffold_artifact(self, project_path: str, artifact: str) -> str:
         """Delegate deterministic Markdown scaffold rendering."""
@@ -386,11 +366,6 @@ class ProjectManager:
         sources_dir.mkdir(parents=True, exist_ok=True)
         return sources_dir
 
-    def _analysis_dir(self, project_path: Path) -> Path:
-        analysis_dir = project_path / "analysis"
-        analysis_dir.mkdir(parents=True, exist_ok=True)
-        return analysis_dir
-
     def _ensure_unique_path(self, path: Path) -> Path:
         if not path.exists():
             return path
@@ -431,99 +406,6 @@ class ProjectManager:
         else:
             shutil.copytree(source, destination)
         return destination
-
-    def _run_tool(self, args: list[str]) -> None:
-        child_env = os.environ.copy()
-        child_env["PYTHONUTF8"] = "1"
-        child_env["PYTHONIOENCODING"] = "utf-8:replace"
-        try:
-            result = subprocess.run(
-                args,
-                cwd=REPO_ROOT,
-                check=True,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                env=child_env,
-            )
-        except FileNotFoundError as exc:
-            raise RuntimeError(f"Missing executable: {args[0]}") from exc
-        except subprocess.CalledProcessError as exc:
-            details = (exc.stderr or exc.stdout or "").strip()
-            raise RuntimeError(details or "tool execution failed") from exc
-
-        if result.stdout.strip():
-            print(result.stdout.strip())
-
-    def _import_pdf(self, pdf_path: Path, markdown_path: Path) -> None:
-        route = build_conversion_command(
-            str(pdf_path),
-            markdown_path,
-            forced_type="pdf",
-        )
-        self._run_tool(route.command)
-
-    def _import_doc(self, doc_path: Path, markdown_path: Path) -> None:
-        route = build_conversion_command(
-            str(doc_path),
-            markdown_path,
-            forced_type="doc",
-        )
-        self._run_tool(route.command)
-
-    def _import_presentation(self, presentation_path: Path, markdown_path: Path) -> None:
-        route = build_conversion_command(
-            str(presentation_path),
-            markdown_path,
-            forced_type="pptx",
-        )
-        self._run_tool(route.command)
-
-    def _import_pptx_intake(self, presentation_path: Path, project_dir: Path) -> Path:
-        # Multi-deck intake: each PPTX writes its own `<stem>.identity.json` /
-        # `<stem>.slide_library.json` and is merged into the single multi-deck
-        # index `analysis/source_profile.json` (one entry per source deck).
-        analysis_dir = self._analysis_dir(project_dir)
-        self._run_tool(
-            [
-                sys.executable,
-                str(TOOLS_DIR / "pptx_intake.py"),
-                str(presentation_path),
-                "-o",
-                str(analysis_dir),
-            ]
-        )
-        return analysis_dir
-
-    def _import_excel(self, excel_path: Path, markdown_path: Path) -> None:
-        route = build_conversion_command(
-            str(excel_path),
-            markdown_path,
-            forced_type="excel",
-        )
-        self._run_tool(route.command)
-
-    def _import_url(
-        self,
-        url: str,
-        markdown_path: Path,
-    ) -> None:
-        route = build_conversion_command(
-            url,
-            markdown_path,
-            forced_type="web",
-        )
-        self._run_tool(route.command)
-
-    def _is_valid_imported_url_markdown(self, markdown_path: Path) -> bool:
-        """Return whether web_to_md produced a usable Markdown source."""
-        if not markdown_path.is_file():
-            return False
-        content = markdown_path.read_text(encoding="utf-8", errors="replace")
-        if "[Failed URLs]:" in content:
-            return False
-        return bool(content.strip())
 
     def _archive_url_record(self, sources_dir: Path, url: str) -> Path:
         file_path = self._ensure_unique_path(sources_dir / f"{derive_url_basename(url)}.url.txt")
@@ -858,26 +740,14 @@ class ProjectManager:
 
         for item in expanded_items:
             if is_url(item):
-                markdown_path = self._ensure_unique_path(
-                    sources_dir / f"{derive_url_basename(item)}.md"
+                # web-to-Markdown fetching was removed with the source_to_md
+                # toolchain; record the URL as provenance only.
+                archived = self._archive_url_record(sources_dir, item)
+                summary["url_records"].append(str(archived))
+                summary["skipped"].append(
+                    f"{item}: URL conversion is no longer bundled; "
+                    "save the page content as Markdown and import that"
                 )
-                try:
-                    self._import_url(item, markdown_path)
-                except Exception as exc:  # pragma: no cover - summary path
-                    archived = self._archive_url_record(sources_dir, item)
-                    summary["url_records"].append(str(archived))
-                    summary["skipped"].append(f"{item}: {exc}")
-                    continue
-
-                if not self._is_valid_imported_url_markdown(markdown_path):
-                    markdown_path.unlink(missing_ok=True)
-                    archived = self._archive_url_record(sources_dir, item)
-                    summary["url_records"].append(str(archived))
-                    summary["skipped"].append(f"{item}: URL conversion produced no usable Markdown")
-                    continue
-
-                summary["markdown"].append(str(markdown_path))
-                self._propagate_companion_image_assets(markdown_path, project_dir)
                 continue
 
             source_path = Path(item)
@@ -901,14 +771,14 @@ class ProjectManager:
                 summary["skipped"].append(f"{item}: directories are not supported")
                 continue
 
-            inside_projects = is_within_path(source_path, PROJECTS_ROOT)
+            inside_projects = is_within_path(source_path, projects_root())
             # A file inside another project's tree (projects/<other>/...) is
             # that project's material: taking it by default emptied a finished
             # project's images/ once. Copy unless --move is explicit.
             inside_other_project = (
                 inside_projects
                 and not is_within_path(source_path, project_dir.resolve())
-                and source_path.resolve().parent != PROJECTS_ROOT.resolve()
+                and source_path.resolve().parent != projects_root().resolve()
                 and _is_project_tree(source_path)
             )
             if copy:
@@ -926,7 +796,7 @@ class ProjectManager:
                 effective_move = False
             if move and not inside_projects:
                 print(
-                    f"note: {source_path} is outside {PROJECTS_ROOT}; copied "
+                    f"note: {source_path} is outside {projects_root()}; copied "
                     f"(not moved). Only sources under projects/ may be moved.",
                     file=sys.stderr,
                 )
@@ -959,7 +829,7 @@ class ProjectManager:
                 if (
                     effective_move
                     and web_sources.is_dir()
-                    and web_sources.resolve().parent == PROJECTS_ROOT.resolve()
+                    and web_sources.resolve().parent == projects_root().resolve()
                 ):
                     # topic-research fetches pages beside its pair under
                     # projects/; they travel with the pair as provenance
@@ -999,106 +869,35 @@ class ProjectManager:
                         f"{item}: copied runtime image as {image_path.name} "
                         "to avoid a filename collision"
                     )
-            elif suffix in PDF_SUFFIXES:
+            elif suffix in CONVERTIBLE_SUFFIXES:
+                # The source-document -> Markdown toolchain was removed with
+                # the skill workflows. Keep the original as a provenance
+                # archive and reuse a same-stem Markdown source when present.
                 canonical_markdown_path = sources_dir / f"{archived_path.stem}.md"
                 if archived_path.stem in explicit_markdown_stems:
                     summary["notes"].append(
-                        f"{item}: skipped PDF auto-conversion because a same-stem Markdown source was provided"
+                        f"{item}: archived only; a same-stem Markdown source was provided"
                     )
                     continue
                 if canonical_markdown_path.exists():
                     summary["markdown"].append(str(canonical_markdown_path))
                     self._propagate_companion_image_assets(canonical_markdown_path, project_dir)
                     summary["notes"].append(
-                        f"{item}: skipped PDF auto-conversion because {canonical_markdown_path.name} already exists"
+                        f"{item}: archived only; using existing {canonical_markdown_path.name}"
                     )
                     continue
-                markdown_path = canonical_markdown_path
-                try:
-                    self._import_pdf(archived_path, markdown_path)
-                    summary["markdown"].append(str(markdown_path))
-                    self._propagate_companion_image_assets(markdown_path, project_dir)
-                except Exception as exc:  # pragma: no cover - summary path
-                    summary["skipped"].append(f"{item}: PDF conversion failed ({exc})")
-            elif suffix in PRESENTATION_SUFFIXES:
-                canonical_markdown_path = sources_dir / f"{archived_path.stem}.md"
-                try:
-                    intake_dir = self._import_pptx_intake(archived_path, project_dir)
-                    intake_str = str(intake_dir)
-                    if intake_str not in summary["analysis"]:
-                        summary["analysis"].append(intake_str)
-                except Exception as exc:  # pragma: no cover - summary path
-                    summary["notes"].append(f"{item}: PPTX intake analysis failed ({exc})")
-                if archived_path.stem in explicit_markdown_stems:
-                    summary["notes"].append(
-                        f"{item}: skipped presentation auto-conversion because a same-stem Markdown source was provided"
-                    )
-                    continue
-                if canonical_markdown_path.exists():
-                    summary["markdown"].append(str(canonical_markdown_path))
-                    self._propagate_companion_image_assets(canonical_markdown_path, project_dir)
-                    summary["notes"].append(
-                        f"{item}: skipped presentation auto-conversion because {canonical_markdown_path.name} already exists"
-                    )
-                    continue
-                markdown_path = canonical_markdown_path
-                try:
-                    self._import_presentation(archived_path, markdown_path)
-                    summary["markdown"].append(str(markdown_path))
-                    self._propagate_companion_image_assets(markdown_path, project_dir)
-                except Exception as exc:  # pragma: no cover - summary path
-                    summary["skipped"].append(f"{item}: presentation conversion failed ({exc})")
-            elif suffix in EXCEL_SUFFIXES:
-                canonical_markdown_path = sources_dir / f"{archived_path.stem}.md"
-                if archived_path.stem in explicit_markdown_stems:
-                    summary["notes"].append(
-                        f"{item}: skipped Excel auto-conversion because a same-stem Markdown source was provided"
-                    )
-                    continue
-                if canonical_markdown_path.exists():
-                    summary["markdown"].append(str(canonical_markdown_path))
-                    self._propagate_companion_image_assets(canonical_markdown_path, project_dir)
-                    summary["notes"].append(
-                        f"{item}: skipped Excel auto-conversion because {canonical_markdown_path.name} already exists"
-                    )
-                    continue
-                markdown_path = canonical_markdown_path
-                try:
-                    self._import_excel(archived_path, markdown_path)
-                    summary["markdown"].append(str(markdown_path))
-                    self._propagate_companion_image_assets(markdown_path, project_dir)
-                except Exception as exc:  # pragma: no cover - summary path
-                    summary["skipped"].append(f"{item}: Excel conversion failed ({exc})")
+                summary["skipped"].append(
+                    f"{item}: archived only; {suffix} conversion is no longer "
+                    "bundled. Provide a .md source to use it as brief material."
+                )
             elif suffix in LEGACY_EXCEL_SUFFIXES:
                 summary["notes"].append(
-                    f"{item}: archived only; legacy .xls is not converted automatically. "
-                    "Resave as .xlsx to generate Markdown."
+                    f"{item}: archived only; legacy .xls is not converted automatically."
                 )
             elif suffix in TABLE_TEXT_SUFFIXES:
                 summary["notes"].append(
                     f"{item}: archived as a plain-text table source; no Markdown conversion needed"
                 )
-            elif suffix in DOC_SUFFIXES:
-                canonical_markdown_path = sources_dir / f"{archived_path.stem}.md"
-                if archived_path.stem in explicit_markdown_stems:
-                    summary["notes"].append(
-                        f"{item}: skipped document auto-conversion because a same-stem Markdown source was provided"
-                    )
-                    continue
-                if canonical_markdown_path.exists():
-                    summary["markdown"].append(str(canonical_markdown_path))
-                    self._propagate_companion_image_assets(canonical_markdown_path, project_dir)
-                    summary["notes"].append(
-                        f"{item}: skipped document auto-conversion because {canonical_markdown_path.name} already exists"
-                    )
-                    continue
-                markdown_path = canonical_markdown_path
-                try:
-                    self._import_doc(archived_path, markdown_path)
-                    summary["markdown"].append(str(markdown_path))
-                    self._propagate_companion_image_assets(markdown_path, project_dir)
-                except Exception as exc:  # pragma: no cover - summary path
-                    summary["skipped"].append(f"{item}: document conversion failed ({exc})")
             elif suffix == ".txt":
                 markdown_path = self._normalize_text_source(archived_path, sources_dir)
                 summary["markdown"].append(str(markdown_path))
@@ -1109,7 +908,7 @@ class ProjectManager:
         # its files move into the target project. Every other location is copied
         # and remains untouched, even when the caller passes --move.
         for directory in supplied_dirs:
-            if copy or not is_within_path(directory, PROJECTS_ROOT):
+            if copy or not is_within_path(directory, projects_root()):
                 continue
             if directory.is_dir() and not any(directory.iterdir()):
                 try:
@@ -1172,7 +971,7 @@ class ProjectManager:
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(
-        description="PPT Master project management helpers.",
+        description="pptx-compiler project management helpers.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:
   python3 scripts/project_manager.py init demo
@@ -1448,3 +1247,7 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:
         print(f"[ERROR] {exc}")
         return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

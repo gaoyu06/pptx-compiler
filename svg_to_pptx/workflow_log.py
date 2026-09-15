@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Workflow Log
+pptx-compiler - Workflow Log
 
 Append one manually selected important event to a project's cold audit log.
 

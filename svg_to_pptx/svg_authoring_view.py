@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - SVG Authoring View
+pptx-compiler - SVG Authoring View
 
 Create a lightweight, non-destructive editable IR from PPTX-imported SVG
 files. The source SVG remains the native-payload authority; the authoring copy

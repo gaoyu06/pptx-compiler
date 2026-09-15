@@ -1,12 +1,9 @@
-# pptx-svg — an SVG superset that compiles to editable PPTX
+# pptx-compiler — an SVG superset that compiles to editable PPTX
 
-Fork of [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master), rebuilt as
-a compiler: **project-normalized SVG + `pptx:` namespace extensions → native,
-editable PPTX**. The language is specified in `SPEC.md`.
+**Project-normalized SVG + `pptx:` namespace extensions → native, editable
+PPTX.** The language is specified in `SPEC.md`.
 
-The upstream prompt workflows, design references, style presets, icon/sound
-libraries, source-document converters, image/TTS backends, and preview UIs were
-removed. What remains:
+The toolchain ships three commands:
 
 - `svg-to-pptx` — compile `svg_output/*.svg` (or a `deck.xml` page list)
   into a native PPTX (DrawingML shapes, charts, tables, OMML formulas,
@@ -20,11 +17,11 @@ removed. What remains:
 
 ```bash
 # zero-install run straight from the repo
-uvx --from git+https://github.com/gaoyu06/ppt-master svg-to-pptx <project>
+uvx --from git+https://github.com/gaoyu06/pptx-compiler svg-to-pptx <project>
 
 # or install the CLI tools
-pipx install git+https://github.com/gaoyu06/ppt-master
-# or: pip install git+https://github.com/gaoyu06/ppt-master
+pipx install git+https://github.com/gaoyu06/pptx-compiler
+# or: pip install git+https://github.com/gaoyu06/pptx-compiler
 ```
 
 ## Usage
@@ -44,5 +41,7 @@ etc.
 Run `svg-to-pptx --help` for transitions (`-t`), object animations (`-a`),
 native charts/tables, and round-trip options.
 
-Upstream: MIT license, © 2025-2026 Hugo He (LICENSE, SPONSORS.md,
-SPONSORS_CN.md).
+Originally derived from [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master);
+the prompt workflows, design references, style presets, icon/sound libraries,
+source-document converters, image/TTS backends, and preview UIs were removed
+and the compiler core rebuilt into this package. MIT license — see LICENSE.

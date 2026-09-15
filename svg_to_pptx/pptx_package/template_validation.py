@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPT Master - Template Package Validation
+pptx-compiler - Template Package Validation
 
 Read a generated structured PPTX back and verify its reusable Master/Layout graph.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PPT Master SVG quality-check CLI implementation.
+"""pptx-compiler SVG quality-check CLI implementation.
 
 Parses the legacy command-line contract and delegates validation to the checker.
 
@@ -10,7 +10,7 @@ Examples:
     python3 scripts/svg_lint.py projects/demo --stage final --json
 
 Dependencies:
-    Standard library plus local PPT Master validation modules.
+    Standard library plus local pptx-compiler validation modules.
 """
 
 import sys
@@ -109,7 +109,7 @@ def _default_json_report_path(
 
 def print_usage() -> None:
     """Print CLI usage information."""
-    print("PPT Master - SVG lint (compiler pre-export pass)\n")
+    print("pptx-compiler - SVG lint (compiler pre-export pass)\n")
     print("Usage:")
     print("  python3 scripts/svg_lint.py <svg_file>")
     print("  python3 scripts/svg_lint.py <directory>")
