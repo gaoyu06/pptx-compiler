@@ -13,6 +13,34 @@ The toolchain ships three commands:
 - `pptx-to-svg` — import an existing PPTX back into the authoring SVG
   form (round-trip editing)
 
+## What a page looks like
+
+```xml
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:pptx="http://pptx-svg.dev/ns/1"
+     viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#0d1526"/>
+  <text x="80" y="140" font-size="56" fill="#fff"
+        pptx:effect="outer-shadow(blur=8,dist=4,color=#00000066)">
+    <tspan>Quarterly Review</tspan>
+  </text>
+  <g id="hero">
+    <circle cx="640" cy="400" r="90" fill="#e63946"/>
+    <pptx:anim effect="fly" start="click" dur="0.5" dir="up"/>
+    <pptx:anim effect="emphasis_grow_shrink" start="after"
+               repeat="indefinite" autorev="true"/>
+  </g>
+  <pptx:transition effect="fade" dur="0.5"/>
+  <pptx:notes>Open with the headline number.</pptx:notes>
+</svg>
+```
+
+Every page is a standalone, valid SVG; `pptx:` attributes and elements
+compile to native DrawingML/PresentationML — editable shapes, real
+animations, real speaker notes, never rasterized. See `SPEC.md` for the
+full language and `examples/showcase/` for a project that exercises
+every feature.
+
 ## Install
 
 ```bash

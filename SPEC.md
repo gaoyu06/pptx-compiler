@@ -1,5 +1,7 @@
 # pptx-svg — Language Specification (v0.1)
 
+The authoring language of [pptx-compiler](https://github.com/gaoyu06/pptx-compiler).
+
 > Implementation status: all of §3–§7 and `deck.xml` (§1) are implemented
 > and compile-checked. `pptx:ph` binds to the structured-deck placeholder
 > contract (slot `<g>` + `data-pptx-bounds` + carrier child); `pic`/`tbl`
@@ -100,13 +102,17 @@ in percent or `0–1`, `color` is `#rgb[a]`/`#rrggbb[aa]`.
 | `pptx:ph` | `title` `body` `pic` `chart` `tbl` … | placeholder binding (structured decks) |
 | `pptx:crop` | `l,t,r,b` fractions | image crop (`a:srcRect`) |
 
-### Text paragraph control (on `<text>`)
+### Text paragraph control
 
-| Attribute | Meaning |
-|---|---|
-| `pptx:line-height` | paragraph line spacing: `38`/`38px` in px, `1.6x`/`160%` as multiple |
-| `pptx:space-before` | paragraph space before (px) |
-| `pptx:soft-break` | intra-paragraph soft line break flag |
+`pptx:line-height` goes on `<text>` and applies to all its paragraphs;
+the rest go on individual `<tspan>` lines (one `<tspan>` = one `a:p`):
+
+| Attribute | Element | Meaning |
+|---|---|---|
+| `pptx:line-height` | `<text>` | line spacing: `38`/`38px` in px, `1.6x`/`160%` as multiple |
+| `pptx:space-before` | `<tspan>` | paragraph space before (px) |
+| `pptx:line-break` | `<tspan>` | hard line break inside the paragraph (`a:br`) |
+| `pptx:soft-break` | `<tspan>` | intra-paragraph soft line break flag |
 
 ### Native objects
 
@@ -179,24 +185,45 @@ pass as extra attributes (`dir`, `style`, …).
 
 ## 6. Animation registry
 
-`effect` resolves against the preset registry: 53 entrance, 33
-emphasis, 64 path presets, 53 exit, plus `path` (custom).
+`effect` resolves against the preset registry: 82 entrance, 33
+emphasis, 65 path presets, 53 exit, plus `path` (custom).
 Unknown names are compile errors, not fallbacks.
 
 ## 7. Native objects (closed JSON payloads)
 
-`pptx:data` carries a JSON object selecting a native object schema:
-`{"kind":"chart","type":"bar",…}` or `{"kind":"table",…}`. These
-compile to `graphicFrame` parts with editable data workbooks. Fields
-outside the schema are compile errors.
+`pptx:data` carries a JSON object selecting a native object schema.
+Payloads compile to `graphicFrame` parts with editable data workbooks;
+fields outside the schema are compile errors.
+
+```jsonc
+// chart — compile to c:chart + embedded workbook
+{"kind":"chart","type":"bar","name":"季度销售",
+ "categories":["Q1","Q2","Q3","Q4"],
+ "series":[{"name":"收入","values":[120,190,160,240]}],
+ "x":80,"y":130,"width":540,"height":320}
+
+// table — schema "ppt-master.semantic-table.v2", compile to a:tbl
+{"kind":"table","name":"指标表","header_rows":1,
+ "column_widths":[200,160,160],
+ "columns":["指标","Q3","Q4"],
+ "rows":[["收入","160","240"],["成本","95","140"]],
+ "x":680,"y":130,"width":520,"height":200}
+```
+
+`x`/`y`/`width`/`height` are required (px, slide coordinates) because the
+JSON declares itself authoritative over the `<g>` fallback geometry.
+Chart `type` and table cell-style options follow the closed schemas in
+`svg_to_pptx/native_objects/` and `svg_to_pptx/semantic_table.py`;
+working payloads live in `examples/showcase/pages/05-data.svg`.
 
 ## 8. Validation
 
-`svgx check` validates the full language: SVG core well-formedness,
-`pptx:` attribute values against their enums, anim/transition effect
-names against the registry, `on` idrefs resolvable, `pptx:build`
-targets having ≥1 paragraph. Errors are compile failures — the
-language has no silent fallback.
+`svg-lint <project>` validates the full language and also runs
+automatically at export: SVG core well-formedness, `pptx:` attribute
+values against their enums, anim/transition effect names against the
+registry, `on` idrefs resolvable, `pptx:build` targets having ≥1
+paragraph. Errors are compile failures — the language has no silent
+fallback.
 
 ## 9. Non-goals (v1)
 

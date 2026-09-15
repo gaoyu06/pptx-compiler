@@ -3,8 +3,9 @@
 编译：
 
 ```bash
-python3 svg_to_pptx.py examples/showcase -o /tmp/showcase.pptx \
+svg-to-pptx examples/showcase -o /tmp/showcase.pptx \
   --quick-generate --native-charts-and-tables
+# 开发态等价命令：python3 svg_to_pptx.py examples/showcase ...
 ```
 
 `--native-charts-and-tables` 决定 P5 的 `pptx:data` 是编译为原生
