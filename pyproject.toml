@@ -12,10 +12,6 @@ license = { text = "MIT" }
 authors = [
     { name = "gaoyu06" },
 ]
-
-[project.urls]
-Homepage = "https://github.com/gaoyu06/pptx-compiler"
-Repository = "https://github.com/gaoyu06/pptx-compiler"
 dependencies = [
     "python-pptx>=0.6.21",
     "XlsxWriter>=3.0.0",
@@ -26,6 +22,10 @@ dependencies = [
     "PyYAML>=6.0",
     "openpyxl>=3.1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/gaoyu06/pptx-compiler"
+Repository = "https://github.com/gaoyu06/pptx-compiler"
 
 [project.scripts]
 svg-to-pptx = "svg_to_pptx.pptx_package.cli:main"
