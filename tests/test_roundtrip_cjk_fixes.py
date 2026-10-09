@@ -3,6 +3,8 @@
 
 - An edited round-trip slide whose first object is a full-canvas source
   picture must still export (background promotion used to swallow it).
+- A font family named in CJK script must fill the East Asian slot.
+- Ambiguous-width CJK punctuation must be sized full-width.
 """
 
 from __future__ import annotations
@@ -22,6 +24,12 @@ from pptx.util import Emu
 SCRIPTS_DIR = Path(__file__).resolve().parents[1]
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
+
+from svg_to_pptx.drawingml.utils import (  # noqa: E402
+    estimate_text_width,
+    parse_font_family,
+)
+
 
 def _run(script: str, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
@@ -71,6 +79,25 @@ class RoundtripFullCanvasPictureTests(unittest.TestCase):
                 slide_xml = package.read("ppt/slides/slide1.xml").decode("utf-8")
             self.assertIn("<p:pic", slide_xml)
             self.assertIn("edited", slide_xml)
+
+
+class CjkFontFamilyTests(unittest.TestCase):
+    def test_cjk_named_family_fills_east_asian_slot(self) -> None:
+        fonts = parse_font_family('"思源黑体 CN Medium", sans-serif')
+        self.assertEqual(fonts["ea"], "思源黑体 CN Medium")
+        self.assertEqual(fonts["latin"], "思源黑体 CN Medium")
+
+    def test_latin_family_before_cjk_named_family(self) -> None:
+        fonts = parse_font_family('Montserrat, "思源黑体 CN Medium", sans-serif')
+        self.assertEqual(fonts["latin"], "Montserrat")
+        self.assertEqual(fonts["ea"], "思源黑体 CN Medium")
+
+
+class CjkPunctuationWidthTests(unittest.TestCase):
+    def test_ambiguous_cjk_punctuation_is_full_width(self) -> None:
+        for ch in "“”‘’·—…":
+            with self.subTest(ch=ch):
+                self.assertEqual(estimate_text_width(ch, 20), 20)
 
 
 if __name__ == "__main__":

@@ -3287,7 +3287,9 @@ def parse_font_family(
         win_font = (
             _JA_FONT_FALLBACK_WIN.get(font) if is_japanese else None
         ) or FONT_FALLBACK_WIN.get(font, font)
-        if font in EA_FONTS:
+        # A family named in CJK script (e.g. 思源黑体 CN Medium) is a CJK face
+        # even when it is missing from the EA_FONTS allowlist.
+        if font in EA_FONTS or any(is_cjk_char(ch) for ch in font):
             ea_font = ea_font or win_font
         else:
             latin_font = latin_font or win_font
@@ -3670,13 +3672,18 @@ def resolve_text_run_fonts(text: str, fonts: dict[str, str]) -> dict[str, str]:
     return {'latin': latin, 'ea': ea, 'cs': latin}
 
 
+# East Asian "ambiguous" punctuation that CJK faces draw full-width; sizing it
+# at the Latin 0.55em under-sizes CJK text boxes and LibreOffice/WPS wrap them.
+_CJK_FULL_WIDTH_PUNCTUATION = frozenset('\u201c\u201d\u2018\u2019\u00b7\u2014\u2026')
+
+
 def _estimate_character_width(ch: str, font_size: float) -> float:
     if (
         0xFF00 <= ord(ch) <= 0xFFEF
         and unicodedata.east_asian_width(ch) == 'H'
     ):
         return font_size * 0.5
-    if is_cjk_char(ch):
+    if is_cjk_char(ch) or ch in _CJK_FULL_WIDTH_PUNCTUATION:
         return font_size
     if ch == ' ':
         return font_size * 0.3
